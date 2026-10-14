@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IBM Bee Catcher · Admin</title>
+<link rel="icon" href="/img/bee.png">
+<style>
+:root{--blue:#0f62fe;--yellow:#f1c21b;--green:#42be65;--red:#fa4d56;--purple:#be95ff;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0b0f1a;color:#f4f4f4;font-family:-apple-system,'IBM Plex Sans',sans-serif;font-size:14px;min-height:100vh;}
+a{color:#78a9ff;text-decoration:none;}
+button{font:inherit;cursor:pointer;border:none;border-radius:6px;padding:9px 16px;font-weight:600;transition:.15s;}
+button:active{filter:brightness(.88);}
+.btn-primary{background:var(--blue);color:#fff;}
+.btn-ghost{background:transparent;border:1px solid #444;color:#f4f4f4;}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:4px;}
+input,select{font:inherit;background:#1c2133;border:1px solid #333;color:#fff;border-radius:6px;padding:9px 12px;width:100%;outline:none;}
+input:focus,select:focus{border-color:var(--blue);}
+input[type=color]{padding:2px;height:36px;width:48px;cursor:pointer;}
+input[type=number]{width:120px;}
+.hidden{display:none!important;}
+/* LOGIN */
+#loginWrap{max-width:360px;margin:15vh auto;padding:20px;}
+#loginWrap h1{font-size:22px;margin-bottom:4px;}
+#loginWrap p{opacity:.55;margin-bottom:22px;font-size:13px;}
+#loginWrap input{margin-bottom:12px;}
+#loginErr{color:var(--red);font-size:13px;margin-top:8px;min-height:18px;}
+/* SHELL */
+#shell{display:none;flex-direction:column;min-height:100vh;}
+header{background:#060912;border-bottom:1px solid #1e2540;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+header .brand{display:flex;align-items:center;gap:10px;}
+header img{height:22px;}
+header h1{font-size:17px;font-weight:700;}
+header .hlinks{display:flex;gap:10px;align-items:center;}
+header .hlinks a{font-size:13px;opacity:.7;}
+header .hlinks a:hover{opacity:1;}
+nav{background:#0f1627;border-bottom:1px solid #1e2540;padding:0 24px;display:flex;gap:2px;overflow-x:auto;}
+nav button{background:transparent;border-radius:0;padding:14px 18px;color:#9ca3af;border-bottom:3px solid transparent;font-size:13px;white-space:nowrap;}
+nav button.active{color:#fff;border-bottom-color:var(--blue);}
+.content{flex:1;padding:28px 24px;max-width:1200px;margin:0 auto;width:100%;}
+/* STAT CARDS */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:28px;}
+.stat-card{background:#131929;border:1px solid #1e2540;border-radius:10px;padding:16px;text-align:center;}
+.stat-card .v{font-size:28px;font-weight:800;color:var(--yellow);}
+.stat-card .l{font-size:11px;text-transform:uppercase;letter-spacing:.07em;opacity:.5;margin-top:3px;}
+/* SECTION */
+.section-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+.section-head h2{font-size:17px;font-weight:700;}
+.section-head .actions{display:flex;gap:8px;flex-wrap:wrap;}
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #1e2540;}
+table{width:100%;border-collapse:collapse;background:#131929;}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.07em;opacity:.5;padding:10px 12px;background:#0f1627;white-space:nowrap;}
+td{padding:10px 12px;border-top:1px solid #1a2035;vertical-align:middle;}
+tr:hover td{background:rgba(255,255,255,.025);}
+td.num{font-variant-numeric:tabular-nums;text-align:right;}
+th.num{text-align:right;}
+.pill{display:inline-block;padding:3px 11px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid;}
+.claimed-yes{color:var(--green);}
+.claimed-no{opacity:.45;}
+/* TIERS */
+.tier-grid{display:grid;gap:10px;}
+.tier-row-edit{display:grid;grid-template-columns:44px 1fr 110px 1fr 2fr auto;gap:10px;align-items:center;background:#131929;border:1px solid #1e2540;border-radius:8px;padding:12px;}
+.tier-row-edit label{font-size:11px;opacity:.5;text-transform:uppercase;display:block;margin-bottom:4px;}
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:640px;}
+.settings-grid .full{grid-column:1/-1;}
+.settings-grid label{font-size:12px;opacity:.65;display:block;margin-bottom:5px;}
+.settings-grid input{margin-bottom:0;}
+/* PANEL */
+.panel{display:none;}.panel.active{display:block;}
+/* TOAST */
+#toast{position:fixed;bottom:22px;right:22px;padding:11px 20px;border-radius:8px;font-weight:600;font-size:14px;background:var(--green);color:#000;opacity:0;pointer-events:none;transition:.25s;z-index:99;}
+#toast.show{opacity:1;}
+#toast.bad{background:var(--red);color:#fff;}
+/* TIER BREAKDOWN BAR */
+.tier-breakdown{margin-top:14px;}
+.tb-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;}
+.tb-label{width:130px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tb-bar-wrap{flex:1;background:#1a2035;border-radius:3px;height:8px;}
+.tb-bar{height:100%;border-radius:3px;transition:width .4s;}
+.tb-count{width:28px;text-align:right;font-size:12px;opacity:.6;}
+@media(max-width:640px){.tier-row-edit{grid-template-columns:44px 1fr 100px;}.tier-row-edit .prize-col,.tier-row-edit .blurb-col{grid-column:2/-1;}.settings-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginWrap">
+  <h1>Admin Panel</h1>
+  <p>IBM Bee Catcher</p>
+  <input type="password" id="pw" placeholder="Admin password" autofocus>
+  <button class="btn-primary" id="btnLogin" style="width:100%">Sign in</button>
+  <div id="loginErr"></div>
+</div>
+
+<!-- SHELL -->
+<div id="shell">
+  <header>
+    <div class="brand">
+      <img src="/img/ibm-eye-bee-m.png" alt="">
+      <h1>IBM Bee Catcher · Admin</h1>
+    </div>
+    <div class="hlinks">
+      <a href="/" target="_blank">Game ↗</a>
+      <a href="/leaderboard.html" target="_blank">Leaderboard ↗</a>
+      <button class="btn-ghost btn-sm" id="btnLogout">Sign out</button>
+    </div>
+  </header>
+  <nav id="tabs">
+    <button data-tab="leaderboard" class="active">Leaderboard</button>
+    <button data-tab="tiers">Tiers &amp; Prizes</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+  <div class="content">
+
+    <!-- ── LEADERBOARD TAB ── -->
+    <div class="panel active" id="tab-leaderboard">
+      <div class="stat-row" id="statCards"></div>
+      <div class="tier-breakdown" id="tierBreakdown"></div>
+      <div class="section-head" style="margin-top:22px">
+        <h2>Players</h2>
+        <div class="actions">
+          <input type="search" id="search" placeholder="Search name" style="width:200px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="onlyUnclaimed" style="width:auto"> Unclaimed only
+          </label>
+          <button class="btn-ghost btn-sm" id="btnExport">Export CSV</button>
+          <button class="btn-danger btn-sm" id="btnWipe">Reset leaderboard</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Player</th><th>Tier</th><th class="num">Score</th><th class="num">Level</th><th>Prize</th><th>Status</th><th></th></tr></thead>
+          <tbody id="playerRows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── TIERS TAB ── -->
+    <div class="panel" id="tab-tiers">
+      <p style="opacity:.6;font-size:13px;margin-bottom:18px;max-width:700px">Each tier is awarded to players who reach its minimum score. Existing players are re-ranked immediately when you save. One tier must have a minimum score of 0 (the default).</p>
+      <div class="tier-grid" id="tierRows"></div>
+      <div style="display:flex;gap:10px;margin-top:16px">
+        <button class="btn-ghost" id="btnAddTier">+ Add tier</button>
+        <button class="btn-primary" id="btnSaveTiers">Save tiers</button>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS TAB ── -->
+    <div class="panel" id="tab-settings">
+      <div class="settings-grid">
+        <div class="full">
+          <label>Event name</label>
+          <input id="setName" type="text" maxlength="60">
+        </div>
+        <div>
+          <label>Starting game duration (seconds)</label>
+          <input id="setDur" type="number" min="15" max="300">
+        </div>
+        <div>
+          <label>Admin password</label>
+          <input id="setPw" type="text" placeholder="Leave blank to keep current" maxlength="80">
+        </div>
+        <div class="full">
+          <button class="btn-primary" id="btnSaveSettings">Save settings</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+let KEY=sessionStorage.getItem('beeAdminKey')||'';
+let players=[], config=null;
+
+// ── TOAST ───────────────────────────────────────────────────────
+function toast(msg,bad=false){const t=$('toast');t.textContent=msg;t.className='show'+(bad?' bad':'');setTimeout(()=>t.className='',2400);}
+
+// ── API ─────────────────────────────────────────────────────────
+async function api(method,url,body){
+  const r=await fetch(url,{method,headers:{'Content-Type':'application/json','x-admin-key':KEY},body:body?JSON.stringify(body):undefined});
+  if(r.status===401){logout();throw new Error('Unauthorised');}
+  if(!r.ok)throw new Error((await r.json().catch(()=>({}))).error||'Request failed');
+  return r.json();
+}
+
+// ── AUTH ────────────────────────────────────────────────────────
+async function login(key){
+  KEY=key;
+  try{
+    await api('POST','/api/admin/login');
+    sessionStorage.setItem('beeAdminKey',key);
+    $('loginWrap').classList.add('hidden');
+    $('shell').style.display='flex';
+    await loadAll();
+  }catch{$('loginErr').textContent='Incorrect password';KEY='';}
+}
+function logout(){sessionStorage.removeItem('beeAdminKey');KEY='';$('shell').style.display='none';$('loginWrap').classList.remove('hidden');}
+$('btnLogin').onclick=()=>login($('pw').value);
+$('pw').onkeydown=e=>{if(e.key==='Enter')login($('pw').value);};
+$('btnLogout').onclick=logout;
+if(KEY)login(KEY);
+
+// ── TABS ────────────────────────────────────────────────────────
+$('tabs').onclick=e=>{
+  const t=e.target.dataset.tab;if(!t)return;
+  document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active',b===e.target));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='tab-'+t));
+};
+
+// ── LOAD ALL ────────────────────────────────────────────────────
+async function loadAll(){
+  [config,{players}]=await Promise.all([api('GET','/api/admin/config'),api('GET','/api/admin/players')]);
+  renderStats();renderTierBreakdown();renderPlayers();renderTiers();renderSettings();
+}
+
+// ── STATS CARDS ─────────────────────────────────────────────────
+function renderStats(){
+  const claimed=players.filter(p=>p.claimed).length;
+  const top=players.length?players[0]:null;
+  $('statCards').innerHTML=[
+    [players.length,'Total players'],
+    [players.length-claimed,'Prizes to give'],
+    [claimed,'Prizes claimed'],
+    [top?top.score:0,'Top score'],
+    [top?escH(top.name):'-','Leader'],
+  ].map(([v,l])=>`<div class="stat-card"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+}
+
+// ── TIER BREAKDOWN ───────────────────────────────────────────────
+function renderTierBreakdown(){
+  if(!players.length){$('tierBreakdown').innerHTML='';return;}
+  const max=Math.max(1,...(config.tiers.map(t=>players.filter(p=>p.tier?.id===t.id).length)));
+  $('tierBreakdown').innerHTML='<div style="font-size:12px;opacity:.5;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Tier breakdown</div>'+
+    config.tiers.slice().sort((a,b)=>b.minScore-a.minScore).map(t=>{
+      const cnt=players.filter(p=>p.tier?.id===t.id).length;
+      const pct=Math.round(cnt/max*100);
+      return `<div class="tb-row"><div class="tb-label" style="color:${escH(t.color)}">${escH(t.name)}</div><div class="tb-bar-wrap"><div class="tb-bar" style="width:${pct}%;background:${escH(t.color)}"></div></div><div class="tb-count">${cnt}</div></div>`;
+    }).join('');
+}
+
+// ── PLAYERS TABLE ────────────────────────────────────────────────
+function renderPlayers(){
+  const q=$('search').value.trim().toLowerCase();
+  const only=$('onlyUnclaimed').checked;
+  const list=players.map((p,i)=>({...p,rank:i+1})).filter(p=>(!q||p.name.toLowerCase().includes(q))&&(!only||!p.claimed));
+  $('playerRows').innerHTML=list.length
+    ?list.map(p=>`<tr>
+      <td>${p.rank}</td>
+      <td><strong>${escH(p.name)}</strong></td>
+      <td><span class="pill" style="color:${escH(p.tier?.color)};border-color:${escH(p.tier?.color)}">${escH(p.tier?.name)}</span></td>
+      <td class="num">${p.score.toLocaleString()}</td>
+      <td class="num">${p.level}</td>
+      <td>${escH(p.tier?.prize||'')}</td>
+      <td class="${p.claimed?'claimed-yes':'claimed-no'}">${p.claimed?'✓ Claimed':'Pending'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-ghost btn-sm" data-act="claim" data-id="${p.id}">${p.claimed?'Undo':'Mark claimed'}</button>
+        <button class="btn-danger btn-sm" style="margin-left:4px" data-act="del" data-id="${p.id}">Delete</button>
+      </td></tr>`).join('')
+    :'<tr><td colspan="8" style="text-align:center;opacity:.4;padding:32px">No players found</td></tr>';
+}
+$('search').oninput=renderPlayers;
+$('onlyUnclaimed').onchange=renderPlayers;
+$('playerRows').onclick=async e=>{
+  const{act,id}=e.target.dataset;if(!act)return;
+  const p=players.find(x=>x.id===id);if(!p)return;
+  try{
+    if(act==='claim'){await api('PATCH','/api/admin/players/'+id,{claimed:!p.claimed});toast(p.claimed?'Marked unclaimed':'Marked claimed');}
+    if(act==='del'){if(!confirm('Delete '+p.name+'?'))return;await api('DELETE','/api/admin/players/'+id);toast('Deleted');}
+    await loadAll();
+  }catch(err){toast(err.message,true);}
+};
+$('btnWipe').onclick=async()=>{
+  if(!confirm('Delete ALL players and reset the leaderboard?'))return;
+  await api('DELETE','/api/admin/players');await loadAll();toast('Leaderboard reset');
+};
+$('btnExport').onclick=()=>{
+  const cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const rows=[['Rank','Name','Score','Level','Tier','Prize','Claimed','Played at']]
+    .concat(players.map((p,i)=>[i+1,p.name,p.score,p.level,p.tier?.name,p.tier?.prize,p.claimed?'yes':'no',p.playedAt]));
+  const blob=new Blob([rows.map(r=>r.map(cell).join(',')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='bee-catcher-players.csv';a.click();
+};
+
+// ── TIERS ────────────────────────────────────────────────────────
+function renderTiers(){
+  $('tierRows').innerHTML=config.tiers.map((t,i)=>`
+    <div class="tier-row-edit" data-i="${i}">
+      <div>
+        <label>Colour</label>
+        <input type="color" value="${escH(t.color)}" data-f="color" title="Tier colour">
+      </div>
+      <div>
+        <label>Tier name</label>
+        <input type="text" value="${escH(t.name)}" data-f="name" maxlength="40">
+      </div>
+      <div>
+        <label>Min score ▲</label>
+        <input type="number" value="${t.minScore}" data-f="minScore" min="0" style="width:100%">
+      </div>
+      <div class="prize-col">
+        <label>Prize / gift</label>
+        <input type="text" value="${escH(t.prize||'')}" data-f="prize" maxlength="120" placeholder="e.g. IBM branded bottle">
+      </div>
+      <div class="blurb-col">
+        <label>Message shown to player</label>
+        <input type="text" value="${escH(t.blurb||'')}" data-f="blurb" maxlength="140" placeholder="Short congratulations message">
+      </div>
+      <div>
+        <button class="btn-danger btn-sm" data-del="${i}" title="Remove tier" style="margin-top:18px">✕</button>
+      </div>
+    </div>`).join('');
+}
+function readTiers(){
+  return [...document.querySelectorAll('#tierRows .tier-row-edit')].map((row,i)=>{
+    const t={...config.tiers[i]};
+    row.querySelectorAll('input').forEach(inp=>{
+      t[inp.dataset.f]=inp.dataset.f==='minScore'?Number(inp.value)||0:inp.value;
+    });
+    return t;
+  });
+}
+$('tierRows').onclick=e=>{
+  if(e.target.dataset.del===undefined)return;
+  config.tiers=readTiers();config.tiers.splice(Number(e.target.dataset.del),1);renderTiers();
+};
+$('btnAddTier').onclick=()=>{
+  config.tiers=readTiers();
+  config.tiers.push({id:'t'+Date.now(),name:'New tier',minScore:0,color:'#78a9ff',prize:'',blurb:''});
+  renderTiers();
+};
+$('btnSaveTiers').onclick=async()=>{
+  const tiers=readTiers();
+  if(!tiers.length){toast('Need at least one tier',true);return;}
+  if(!tiers.some(t=>t.minScore===0)){toast('One tier must have minimum score = 0',true);return;}
+  try{await api('PUT','/api/admin/config',{tiers});await loadAll();toast('Tiers saved');}
+  catch(err){toast(err.message,true);}
+};
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+function renderSettings(){
+  $('setName').value=config.eventName||'';
+  $('setDur').value=config.gameDuration||60;
+  $('setPw').value='';
+}
+$('btnSaveSettings').onclick=async()=>{
+  const body={eventName:$('setName').value.trim()||'IBM Bee Catcher',gameDuration:Number($('setDur').value)||60};
+  const pw=$('setPw').value.trim();if(pw)body.adminPassword=pw;
+  try{
+    await api('PUT','/api/admin/config',body);
+    if(pw){KEY=pw;sessionStorage.setItem('beeAdminKey',pw);}
+    await loadAll();toast('Settings saved');
+  }catch(err){toast(err.message,true);}
+};
+
+// ── HELPERS ──────────────────────────────────────────────────────
+function escH(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script>
+</body>
+</html>
