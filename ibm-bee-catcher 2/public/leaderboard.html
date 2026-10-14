@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IBM Bee Catcher · Leaderboard</title>
+<link rel="icon" href="/img/bee.png">
+<style>
+  :root{--blue:#0f62fe;--mid:#4589ff;--yellow:#f1c21b;--bg:#000b24;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,#0b2a7a 0%,var(--bg) 60%);color:#fff;font-family:-apple-system,'IBM Plex Sans',sans-serif;padding:28px 20px 60px;}
+  .wrap{max-width:980px;margin:0 auto;}
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:28px;}
+  header h1{font-size:clamp(26px,4vw,40px);letter-spacing:-1px;}
+  header h1 span{color:var(--yellow);}
+  .links a{color:#fff;text-decoration:none;font-size:13px;font-weight:600;padding:9px 18px;border-radius:6px;background:var(--blue);margin-left:8px;}
+  .links a.ghost{background:transparent;border:1.5px solid rgba(255,255,255,.3);}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:28px;}
+  .stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:16px;text-align:center;}
+  .stat .v{font-size:26px;font-weight:800;}
+  .stat .l{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.5;margin-top:2px;}
+
+  /* podium */
+  .podium{display:grid;grid-template-columns:1fr 1.15fr 1fr;gap:14px;align-items:end;margin-bottom:30px;}
+  .pod{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 12px;text-align:center;}
+  .pod.p1{padding-top:26px;padding-bottom:26px;border-color:var(--yellow);box-shadow:0 0 40px rgba(241,194,27,.18);}
+  .pod .medal{font-size:12px;font-weight:700;letter-spacing:.1em;opacity:.7;}
+  .pod .nm{font-size:18px;font-weight:700;margin:8px 0 2px;word-break:break-word;}
+  .pod .sc{font-size:26px;font-weight:800;color:var(--yellow);}
+  .pod .tr{font-size:12px;font-weight:600;margin-top:4px;}
+  .pod .badge{display:flex;justify-content:center;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;opacity:.5;text-align:left;padding:8px 12px;}
+  td{padding:12px;border-top:1px solid rgba(255,255,255,.07);font-size:15px;}
+  tr.row:hover td{background:rgba(255,255,255,.04);}
+  td.rk{width:56px;font-weight:700;opacity:.7;}
+  td.sc{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;}
+  th.sc{text-align:right;}
+  .pill{display:inline-block;padding:3px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1.5px solid;}
+  .empty{text-align:center;opacity:.5;padding:50px 0;}
+  .foot{text-align:center;font-size:12px;opacity:.4;margin-top:24px;}
+  @media(max-width:600px){.podium{grid-template-columns:1fr;} td.lv,th.lv{display:none;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">Bee <span>Leaderboard</span></h1>
+    <div class="links"><a href="/" class="ghost">Play</a></div>
+  </header>
+
+  <div class="stats" id="stats"></div>
+  <div class="podium" id="podium"></div>
+
+  <table>
+    <thead><tr><th>#</th><th>Player</th><th>Tier</th><th class="lv">Level</th><th class="sc">Score</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+  <div class="foot" id="foot">Refreshes automatically</div>
+</div>
+
+<script src="/bee.js"></script>
+<script>
+const esc = IBMBee.esc;
+
+async function refresh() {
+  try {
+    const [lb, st] = await Promise.all([
+      fetch('/api/leaderboard?limit=50').then(r => r.json()),
+      fetch('/api/leaderboard/stats').then(r => r.json()),
+    ]);
+    renderStats(st);
+    renderPodium(lb.players.slice(0, 3));
+    renderRows(lb.players);
+    document.getElementById('foot').textContent = 'Updated ' + new Date().toLocaleTimeString() + ' · refreshes every 5s';
+  } catch {
+    document.getElementById('foot').textContent = 'Server unreachable, retrying...';
+  }
+}
+
+function renderStats(s) {
+  const box = document.getElementById('stats');
+  if (!s.count) { box.innerHTML = ''; return; }
+  box.innerHTML = [
+    [s.count, 'Players'], [s.topScore, 'Top score'], [esc(s.topPlayer), 'Leader'], [s.avgScore, 'Average'],
+  ].map(([v, l]) => `<div class="stat"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+}
+
+function renderPodium(top) {
+  const box = document.getElementById('podium');
+  if (!top.length) { box.innerHTML = ''; return; }
+  // visual order: 2nd, 1st, 3rd
+  const order = [top[1], top[0], top[2]];
+  box.innerHTML = order.map(p => {
+    if (!p) return '<div></div>';
+    return `<div class="pod ${p.rank === 1 ? 'p1' : ''}">
+      <div class="badge">${IBMBee.badge(p.tier.color, p.rank === 1 ? 84 : 64)}</div>
+      <div class="medal">#${p.rank}</div>
+      <div class="nm">${esc(p.name)}</div>
+      <div class="sc">${p.score}</div>
+      <div class="tr" style="color:${esc(p.tier.color)}">${esc(p.tier.name)}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderRows(players) {
+  const body = document.getElementById('rows');
+  if (!players.length) { body.innerHTML = '<tr><td colspan="5" class="empty">No players yet. Be the first to catch the bee!</td></tr>'; return; }
+  body.innerHTML = players.map(p => `<tr class="row">
+    <td class="rk">${p.rank}</td>
+    <td>${esc(p.name)}</td>
+    <td><span class="pill" style="color:${esc(p.tier.color)};border-color:${esc(p.tier.color)}">${esc(p.tier.name)}</span></td>
+    <td class="lv">${p.level}</td>
+    <td class="sc">${p.score}</td>
+  </tr>`).join('');
+}
+
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>
